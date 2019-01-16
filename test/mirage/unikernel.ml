@@ -19,6 +19,8 @@ module Main (S: Mirage_stack_lwt.V4) = struct
       | Error e -> report_and_close flow S.TCPV4.pp_write_error e "writing in Echo"
 
   let start s =
+    let uuid = Key_gen.uuid () in
+    Logs.info (fun f -> f "uuid=\"%s\"\n" uuid);
     S.listen_tcpv4 s ~port:5555 echo;
     S.listen s
 
