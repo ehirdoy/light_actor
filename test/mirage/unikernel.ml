@@ -13,13 +13,13 @@ module Main (S: Mirage_stack_lwt.V4) = struct
     | Error e -> report_and_close flow S.TCPV4.pp_error e "reading in Echo"
     | Ok `Eof -> report_and_close flow Fmt.string "end of file" "reading in Echo"
     | Ok (`Data buf) ->
+      Logs.debug (fun f -> f "%s" (Cstruct.to_string buf));
       S.TCPV4.write flow buf >>= function
       | Ok () -> echo flow
       | Error e -> report_and_close flow S.TCPV4.pp_write_error e "writing in Echo"
 
   let start s =
-    let port = Key_gen.port () in
-    S.listen_tcpv4 s ~port echo;
+    S.listen_tcpv4 s ~port:5555 echo;
     S.listen s
 
 end
