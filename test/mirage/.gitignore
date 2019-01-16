@@ -2,8 +2,6 @@
 .mirage.config
 key_gen.ml
 main.ml
-mirage-unikernel-noop-unix.opam
+*.opam
 myocamlbuild.ml
-noop
 Makefile
-
