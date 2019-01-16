@@ -6,6 +6,6 @@ unix:
 	make
 
 ukvm:
-	mirage configure -t ukvm
+	mirage configure -t hvt
 	make depend
 	make
