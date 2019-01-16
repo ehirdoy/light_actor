@@ -1,4 +1,4 @@
-module Main = struct
+module Hello = struct
 
   let start =
     Lwt.return_unit
