@@ -1,14 +1,12 @@
 open Mirage
 
-let key =
-  let doc = Key.Arg.info ~doc:"How to say hello." ["hello"] in
-  Key.(create "hello" Arg.(opt string "Hello World!" doc))
+let port =
+  let doc = Key.Arg.info ~doc:"The TCP port on which to listen for incoming connections." ["port"] in
+  Key.(create "port" Arg.(opt int 8081 doc))
 
-let main =
-  foreign
-    ~keys:[Key.abstract key]
-    ~packages:[package "duration"]
-    "Unikernel.Hello" (time @-> job)
+let main = foreign ~keys:[Key.abstract port] "Unikernel.Main" (stackv4 @-> job)
+
+let stack = generic_stackv4 default_network
 
 let () =
-  register "hello" [main $ default_time]
+  register "network" [main $ stack]
