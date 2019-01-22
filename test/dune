@@ -2,10 +2,12 @@
   (public_names
     actor_param_test_0
     actor_param_test_1
+    actor_param_test_2
   )
   (names
     actor_param_test_0
     actor_param_test_1
+    actor_param_test_2
   )
   (package actor_unix)
   (libraries
