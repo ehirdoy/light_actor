@@ -57,7 +57,7 @@ end
 
 include Actor_param_types.Make(Impl)
 
-module M = Actor_param.Make (Actor_net_zmq) (Actor_sys_unix) (Impl)
+module M = Actor_param.Make (Actor_net_tcp) (Actor_sys_unix) (Impl)
 
 
 let main args =
@@ -81,7 +81,6 @@ let main args =
   (* define the participants *)
   let book = Actor_book.make () in
   Actor_book.add book "w0" "" true (-1);
-  Actor_book.add book "w1" "" true (-1);
   if my_uuid <> server_uuid then
     Actor_book.set_addr book my_uuid my_addr;
 
