@@ -5,17 +5,10 @@
 
 open Unix
 
-type socket = Unix.file_descr
+type socket = Lwt_unix.file_descr
 
-let saddr =
-  let host =
-    (gethostbyname (gethostname ())).h_addr_list.(0) in
-  let port =
-    6000 + Random.int (100) in
-  ADDR_INET (host, port)
+let conn_pool : (string, socket) Hashtbl.t = Hashtbl.create 128
 
-let sock =
-  Lwt_unix.socket (domain_of_sockaddr saddr) SOCK_STREAM 0
 
 (* val init : unit -> unit Lwt.t *)
 let init () =
@@ -24,6 +17,9 @@ let init () =
 
 (* val exit : unit -> unit Lwt.t *)
 let exit () =
+  Hashtbl.iter (fun _ v ->
+      Lwt.async (fun () -> Lwt_unix.close v)
+    ) conn_pool;
   Lwt.return_unit
 
 let saddr_of str =
@@ -46,7 +42,6 @@ let listen addr callback =
       fn buf (ic, oc)
   in
   Lwt_io.establish_server_with_client_address
-    ~fd:sock
     (saddr_of addr)
     (fun _ (ic, oc) ->
        fn (Bytes.create (16 * 1024)) (ic, oc)) |> ignore;
@@ -54,10 +49,20 @@ let listen addr callback =
 
 (* val send : string -> string -> unit Lwt.t *)
 let send addr data =
+  let%lwt sock =
+    if Hashtbl.mem conn_pool addr then (
+      Lwt.return (Hashtbl.find conn_pool addr)
+    )
+    else (
+      let s = Lwt_unix.socket PF_INET SOCK_STREAM 0 in
+      let%lwt _ = Lwt_unix.connect s (saddr_of addr) in
+      Hashtbl.add conn_pool addr s;
+      Lwt.return s
+    )
+  in
   let msg = Bytes.of_string data in
   let len = String.length data in
-  let%lwt _ =
-    Lwt_unix.sendto sock msg 0 len [MSG_OOB] (saddr_of addr) in
+  let%lwt _ = Lwt_unix.send sock msg 0 len [] in
   Lwt.return_unit
 
 (* val recv : socket -> string Lwt.t*)
