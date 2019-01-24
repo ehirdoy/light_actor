@@ -1,0 +1,1 @@
+find . -name dune | xargs sed -i 's/lwt.ppx/lwt_ppx/g'
