@@ -6,5 +6,6 @@
   (preprocess (pps lwt_ppx))
   (libraries
     mirage-time-lwt
+    lwt.unix
   )
 )
