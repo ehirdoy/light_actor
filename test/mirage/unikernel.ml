@@ -38,14 +38,14 @@ module Impl = struct
     Unix.sleep (Random.int 3);
     Array.map (fun (key, value) ->
       let new_value = value + Random.int 10 in
-      Actor_log.info "%s: %i => %i" key value new_value;
+      Logs.info (fun f -> f "%s: %i => %i" key value new_value);
       (key, new_value)
     ) kv_pairs
 
   let pull updates = updates
 
   let stop () =
-    Actor_log.info "start_t = %i" !start_t;
+    Logs.info (fun f -> f "start_t = %i" !start_t);
     start_t := !start_t + 1;
     !start_t >= 50
 
