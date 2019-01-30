@@ -3,12 +3,27 @@
  * Copyright (c) 2016-2019 Liang Wang <liang.wang@cl.cam.ac.uk>
  *)
 
-module Make (Time : Mirage_time_lwt.S) = struct
+type socket = int
 
-  let sleep time =
-    let a = Int64.of_int time in
-    let b = Int64.of_int 1_000_000_000 in
-    let t = Int64.mul a b in
-    Time.sleep_ns t
+let init () =
+  Random.self_init();
+  Lwt.return_unit
 
-end
+let exit () =
+  Lwt.return_unit
+
+
+let listen _addr _callback =
+  Lwt.return_unit
+
+
+let send _addr _data =
+  Lwt.return_unit
+
+
+let recv _sock =
+  Lwt.return "" (* not used *)
+
+
+let close _sock =
+  Lwt.return_unit (* not used *)
