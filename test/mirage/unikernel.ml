@@ -35,7 +35,7 @@ module Impl = struct
     ) nodes
 
   let push kv_pairs =
-    Unix.sleep (Random.int 3);
+    for i = 1_000_000 * (Random.int 3) to 0 do ()  done; (* FIXME *)
     Array.map (fun (key, value) ->
       let new_value = value + Random.int 10 in
       Logs.info (fun f -> f "%s: %i => %i" key value new_value);
