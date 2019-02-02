@@ -105,8 +105,14 @@ module Main (S: Mirage_stack_lwt.V4) = struct
       | Error e -> report_and_close flow S.TCPV4.pp_write_error e "writing in Echo"
 
   let start s =
-    let uuid = Key_gen.uuid () in
-    Logs.info (fun f -> f "uuid=\"%s\"\n" uuid);
+    let server_ip = Key_gen.server_ip () in
+    let server_port = Key_gen.server_port () in
+    let my_uuid = Key_gen.my_uuid () in
+    let my_ip = Key_gen.my_ip () in
+    let my_port = Key_gen.my_port () in
+    let my_ip' = Ipaddr.V4.to_string (List.hd (S.IPV4.get_ip (S.ipv4 s))) in
+    if my_ip <> my_ip' then Logs.info (fun f -> f"different IP address? %s vs %s" my_ip my_ip');
+    Logs.info (fun f -> f "uuid=%s server=%s:%s my=%s:%s" uuid server_ip server_port my_ip my_port);
     S.listen_tcpv4 s ~port:5555 echo;
     S.listen s
 
