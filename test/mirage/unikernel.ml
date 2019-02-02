@@ -1,5 +1,35 @@
 open Lwt.Infix
 
+module Net_mirage_udp = struct
+  type socket = int
+
+  let init () =
+    Logs.info (fun f -> f "Net_impl.init ()");
+    Random.self_init();
+    Lwt.return_unit
+
+  let exit () =
+    Logs.info (fun f -> f "Net_impl.exit ()");
+    Lwt.return_unit
+
+  let listen _addr _callback =
+    Logs.info (fun f -> f "Net_impl.listen () %s" _addr);
+    Lwt.return_unit
+
+  let send _addr _data =
+    Logs.info (fun f -> f "Net_impl.send () %s" _addr);
+    Lwt.return_unit
+
+  let recv _sock =
+    Logs.info (fun f -> f "Net_impl.recv ()");
+    Lwt.return "" (* not used *)
+
+  let close _sock =
+    Logs.info (fun f -> f "Net_impl.close ()");
+    Lwt.return_unit (* not used *)
+
+end
+
 module Impl = struct
 
   type model = (string, int) Hashtbl.t
@@ -54,7 +84,7 @@ end
 
 include Actor_param_types.Make(Impl)
 
-module M = Actor_param.Make (Actor_net_mirage) (Actor_sys_mirage) (Impl)
+module M = Actor_param.Make (Net_mirage_udp) (Actor_sys_mirage) (Impl)
 
 module Main (S: Mirage_stack_lwt.V4) = struct
 
