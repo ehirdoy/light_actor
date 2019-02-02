@@ -5,3 +5,7 @@ main.ml
 *.opam
 myocamlbuild.ml
 Makefile
+solo5-hvt
+*.hvt
+*.solo5-hvt
+
