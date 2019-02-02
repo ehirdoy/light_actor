@@ -1,5 +1,3 @@
-open Lwt.Infix
-
 module Net_mirage_udp = struct
   type socket = int
 
@@ -88,32 +86,44 @@ module M = Actor_param.Make (Net_mirage_udp) (Actor_sys_mirage) (Impl)
 
 module Main (S: Mirage_stack_lwt.V4) = struct
 
-  let report_and_close flow pp e message =
-    let ip, port = S.TCPV4.dst flow in
-    Logs.warn (fun m -> m "closing connection from %a:%d due to error %a while %s"
-                  Ipaddr.V4.pp ip port pp e message);
-    S.TCPV4.close flow
-
-  let rec echo flow =
-    S.TCPV4.read flow >>= function
-    | Error e -> report_and_close flow S.TCPV4.pp_error e "reading in Echo"
-    | Ok `Eof -> report_and_close flow Fmt.string "end of file" "reading in Echo"
-    | Ok (`Data buf) ->
-      Logs.debug (fun f -> f "%s" (Cstruct.to_string buf));
-      S.TCPV4.write flow buf >>= function
-      | Ok () -> echo flow
-      | Error e -> report_and_close flow S.TCPV4.pp_write_error e "writing in Echo"
-
   let start s =
+    let server_uuid = "server" in
     let server_ip = Key_gen.server_ip () in
     let server_port = Key_gen.server_port () in
+    let server_addr = "tcp://" ^ server_ip ^ ":" ^ server_port in
+
     let my_uuid = Key_gen.my_uuid () in
     let my_ip = Key_gen.my_ip () in
     let my_port = Key_gen.my_port () in
+    let my_addr = "tcp://" ^ my_ip ^ ":" ^ my_port in
     let my_ip' = Ipaddr.V4.to_string (List.hd (S.IPV4.get_ip (S.ipv4 s))) in
-    if my_ip <> my_ip' then Logs.info (fun f -> f"different IP address? %s vs %s" my_ip my_ip');
-    Logs.info (fun f -> f "uuid=%s server=%s:%s my=%s:%s" uuid server_ip server_port my_ip my_port);
-    S.listen_tcpv4 s ~port:5555 echo;
-    S.listen s
+    if my_ip <> my_ip' then Logs.info (fun f -> f "different IP address? %s vs %s" my_ip my_ip');
+
+    (* define the participants *)
+    let book = Actor_book.make () in
+    Actor_book.add book "w0" "" true (-1);
+    Actor_book.add book "w1" "" true (-1);
+
+    let my_addr =
+      if my_uuid = server_uuid then
+        server_addr
+      else begin
+        Actor_book.set_addr book my_uuid my_addr;
+        my_addr
+      end in
+
+    Logs.info (fun f -> f "my_uuid=%s server=%s my=%s" my_uuid server_addr my_addr);
+
+    (* define parameter server context *)
+    let context = {
+      my_uuid;
+      my_addr;
+      server_uuid;
+      server_addr;
+      book;
+    }
+    in
+
+    M.init context
 
 end
