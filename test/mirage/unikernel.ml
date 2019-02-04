@@ -1,22 +1,44 @@
+open Lwt.Infix
+
 module Net_mirage_udp = struct
+
+  module Stack = Tcpip_stack_socket
+
+  type s = Stack.t
+
   type socket = int
 
-  let init () =
+  let init context =
     Logs.info (fun f -> f "Net_impl.init ()");
     Random.self_init();
+    (* FIXME: Stack s needs to be set *)
     Lwt.return_unit
 
   let exit () =
     Logs.info (fun f -> f "Net_impl.exit ()");
     Lwt.return_unit
 
-  let listen _addr _callback =
-    Logs.info (fun f -> f "Net_impl.listen () %s" _addr);
-    Lwt.return_unit
+  let listen addr callback =
+    Logs.info (fun f -> f "Net_impl.listen () %s" addr);
+    let port = String.split_on_char ':' addr
+               |> List.rev |> List.hd |> int_of_string in
+    let cb udp port ~src ~dst ~src_port buf =
+      Logs.info (fun f -> f "Data from %s:%d to %s:%d %s"
+                    (Ipaddr.V4.to_string src) src_port
+                    (Ipaddr.V4.to_string dst) port
+                    (Cstruct.to_string buf));
+      callback (Cstruct.to_string buf)
+    in
+    Stack.listen_udpv4 s ~port (cb (Stack.udpv4 s) port);
+    Stack.listen s
 
-  let send _addr _data =
+  let send addr data =
     Logs.info (fun f -> f "Net_impl.send () %s" _addr);
-    Lwt.return_unit
+    let _, ip, port = String.split_on_char ':' addr in
+    let dst_port = int_of_string port in
+    let dst = Ipaddr.V4.of_string_exn ip in
+    Stack.UDPV4.write ~dst ~dst_port (Stack.udpv4 s) (Cstruct.of_string data)
+    >>= fun _ -> Lwt.return_unit
 
   let recv _sock =
     Logs.info (fun f -> f "Net_impl.recv ()");
