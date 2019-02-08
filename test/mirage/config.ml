@@ -38,4 +38,4 @@ let main =
 
 let () =
   let stack = generic_stackv4 default_network in
-  register "test" [main $ stack]
+  register "lwae" [main $ stack]
