@@ -18,7 +18,7 @@ let my_ip =
 
 let my_port =
   let doc = Key.Arg.info ~doc:"my port." ["my_port"] in
-  Key.(create "my_port" Arg.(opt string "6001" doc))
+  Key.(create "my_port" Arg.(opt string "6000" doc))
 
 let main =
   let packages = [
