@@ -1,12 +1,13 @@
 open Lwt.Infix
 
-let stored_stack_handler : Tcpip_stack_socket.t option ref = ref None
 
-module Net_mirage_udp = struct
+module Net_mirage_udp (S : Mirage_stack_lwt.V4) = struct
 
   type socket = int
 
-  module Stack = Tcpip_stack_socket
+  let stored_stack_handler : S.t option ref = ref None
+
+  module Stack = S
 
   let to_ip s =
     let s2 =
@@ -110,12 +111,13 @@ end
 
 include Actor_param_types.Make(Impl)
 
-module M = Actor_param.Make (Net_mirage_udp) (Actor_sys_mirage) (Impl)
+module Main (S: Mirage_stack_lwt.V4) = struct
 
-module Main (S: Mirage_stack_lwt.V4 with type t = Tcpip_stack_socket.t) = struct
+  module Mynet = Net_mirage_udp (S)
+  module M = Actor_param.Make (Mynet) (Actor_sys_mirage) (Impl)
 
-  let start (s : Tcpip_stack_socket.t)  =
-    stored_stack_handler := Some s; (* save in global variable *)
+  let start (s : S.t)  =
+    Mynet.stored_stack_handler := Some s; (* save in global variable *)
     print_endline "stored_stack_handler stored";
 
     let server_uuid = "server" in
