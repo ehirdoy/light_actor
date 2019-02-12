@@ -1,62 +1,3 @@
-open Lwt.Infix
-
-
-module Net_mirage_udp (S : Mirage_stack_lwt.V4) = struct
-
-  type socket = int
-
-  let stored_stack_handler : S.t option ref = ref None
-
-  module Stack = S
-
-  let to_ip s =
-    let s2 =
-      match String.split_on_char '/' s with
-      | _ :: _ :: [x] -> x
-      | _ -> failwith "Err" in
-    String.split_on_char '/' s2 |> List.rev |> List.hd
-
-  let init () =
-    Random.self_init();
-    (* FIXME: Stack s needs to be set *)
-    Lwt.return_unit
-
-  let exit () =
-    Lwt.return_unit
-
-  let listen addr callback =
-    let port = String.split_on_char ':' addr
-               |> List.rev |> List.hd |> int_of_string in
-    let cb _udp port ~src ~dst ~src_port buf =
-      callback (Cstruct.to_string buf)
-    in
-    let s = match !stored_stack_handler with
-      | None -> failwith "Uninitialized s"
-      | Some s -> s in
-    Stack.listen_udpv4 s ~port (cb (Stack.udpv4 s) port);
-    Stack.listen s
-
-  let send addr data =
-    let ip, port =
-      match String.split_on_char ':' addr with
-      | _ :: ip :: port :: [] -> ip, port
-      | _ -> failwith "wrong format" in
-    let dst_port = int_of_string port in
-    let dst = Ipaddr.V4.of_string_exn (to_ip ip) in
-    let s = match !stored_stack_handler with
-      | None -> failwith "Uninitialized s"
-      | Some s -> s in
-    Stack.UDPV4.write ~dst ~dst_port (Stack.udpv4 s) (Cstruct.of_string data)
-    >>= fun _ -> Lwt.return_unit
-
-  let recv _sock =
-    Lwt.return "" (* not used *)
-
-  let close _sock =
-    Lwt.return_unit (* not used *)
-
-end
-
 module Impl = struct
 
   type model = (string, int) Hashtbl.t
@@ -92,7 +33,6 @@ module Impl = struct
     ) nodes
 
   let push kv_pairs =
-    for i = 2_000_000 * (Random.int 3) to 0 do i |> ignore done;
     Array.map (fun (key, value) ->
       let new_value = value + Random.int 10 in
       Logs.info (fun f -> f "%s: %i => %i" key value new_value);
@@ -108,27 +48,25 @@ module Impl = struct
 
 end
 
-
 include Actor_param_types.Make(Impl)
 
 module Main (S: Mirage_stack_lwt.V4) = struct
 
-  module Mynet = Net_mirage_udp (S)
-  module M = Actor_param.Make (Mynet) (Actor_sys_mirage) (Impl)
+  module N = Actor_net_mirage.Make (S)
+  module M = Actor_param.Make (N) (Actor_sys_mirage) (Impl)
 
   let start (s : S.t)  =
-    Mynet.stored_stack_handler := Some s; (* save in global variable *)
-    print_endline "stored_stack_handler stored";
+    N.stored_stack_handler := Some s;
 
     let server_uuid = "server" in
     let server_ip = Key_gen.server_ip () in
     let server_port = Key_gen.server_port () in
-    let server_addr = "tcp://" ^ server_ip ^ ":" ^ server_port in
+    let server_addr = "udp://" ^ server_ip ^ ":" ^ server_port in
 
-    let my_uuid = Key_gen.my_uuid () in
-    let my_ip = Key_gen.my_ip () in
-    let my_port = Key_gen.my_port () in
-    let my_addr = "tcp://" ^ my_ip ^ ":" ^ my_port in
+    let my_uuid = Key_gen.uuid () in
+    let my_ip = Key_gen.ip () in
+    let my_port = Key_gen.port () in
+    let my_addr = "udp://" ^ my_ip ^ ":" ^ my_port in
 
     (* define the participants *)
     let book = Actor_book.make () in
@@ -143,9 +81,8 @@ module Main (S: Mirage_stack_lwt.V4) = struct
         my_addr
       end in
 
-    Logs.info (fun f -> f "my_uuid=%s server=%s my=%s" my_uuid server_addr my_addr);
+    Logs.info (fun f -> f "uuid=%s addr=%s server=%s" my_uuid my_addr server_addr);
 
-    (* define parameter server context *)
     let context = {
       my_uuid;
       my_addr;
