@@ -1,0 +1,9 @@
+#!/bin/bash -ex
+
+n=$1
+
+ifconfig tap$n && exit 0
+
+sudo tunctl -u $USER -t tap$n
+sudo ifconfig tap$n 192.168.0.$n up
+ifconfig tap$n
