@@ -13,11 +13,9 @@ case $1 in
         ;;
 esac
 
-sudo ./solo5-hvt --net=tap$n lwae.hvt \
-     --ipv4=192.168.0.$n/24 \
-     --ip=192.168.0.$n \
-     --server_ip=192.168.0.1 \
-     --uuid=$uuid \
-     --port=600$n
-
-
+./solo5-hvt --net=tap$n lwae.hvt \
+            --ipv4=192.168.0.$n/24 \
+            --ip=192.168.0.$n \
+            --server_ip=192.168.0.1 \
+            --uuid=$uuid \
+            --port=600$n
