@@ -37,12 +37,13 @@
  *)
 
 
-open Owl.Neural.S
+module N1 = Owl_neural_generic.Make (Owl_base_dense_ndarray.S)
+open N1
 open Graph
-open Owl_algodiff.S
-open Owl_optimise.S
+module A = Owl_algodiff_generic.Make (Owl_base_dense_ndarray.S)
+open A
 
-module G = Owl.Neural.S.Graph
+module G = Graph
 
 module Dataset = Owl_dataset
 
