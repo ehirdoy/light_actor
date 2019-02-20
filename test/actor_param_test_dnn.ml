@@ -37,13 +37,14 @@
  *)
 
 
-open Owl
 open Owl.Neural.S
 open Graph
 open Owl_algodiff.S
 open Owl_optimise.S
 
 module G = Owl.Neural.S.Graph
+
+module Dataset = Owl_dataset
 
 type task = {
   mutable state  : Checkpoint.state option;
