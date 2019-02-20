@@ -36,23 +36,14 @@
  * with.
  *)
 
-module N1 = Owl_neural_generic.Make (Owl_base_dense_ndarray.S)
-module G = N1.Graph
-module A = Owl_algodiff_generic.Make (Owl_base_dense_ndarray.S)
-module N2 =
-  Owl_neural_graph.Make (
-    Owl_neural_neuron.Make (
-      Owl_optimise_generic.Make (
-        Owl_algodiff_generic.Make (Owl_base_dense_ndarray.S)
-      )
-    )
-  )
-module Dataset = Owl_dataset
 
-open N1
-open N2
-open A
+open Owl
+open Owl.Neural.S
+open Graph
+open Owl_algodiff.S
+open Owl_optimise.S
 
+module G = Owl.Neural.S.Graph
 
 type task = {
   mutable state  : Checkpoint.state option;
