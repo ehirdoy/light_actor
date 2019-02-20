@@ -5,4 +5,5 @@
   (wrapped false)
   (preprocess (pps lwt_ppx))
   (libraries zmq-lwt cstruct-lwt)
+  (ocamlopt_flags (-no-lto))
 )
