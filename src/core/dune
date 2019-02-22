@@ -5,5 +5,4 @@
   (wrapped false)
   (preprocess (pps lwt_ppx))
   (libraries lwt)
-  (ocamlopt_flags (-no-lto))
 )

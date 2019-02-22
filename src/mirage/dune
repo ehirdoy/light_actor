@@ -12,5 +12,4 @@
     ipaddr
     logs
   )
-  (ocamlopt_flags (-no-lto))
 )
