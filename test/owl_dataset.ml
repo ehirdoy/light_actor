@@ -39,6 +39,8 @@ let download_all () =
     ] in
   List.iter (fun fname -> download_data fname) l
 
+module Owl_dense_matrix_generic = Owl_base_dense_ndarray_generic
+
 let draw_samples x y n =
   let x', y', _ = Owl_dense_matrix_generic.draw_rows2 ~replacement:false x y n in
   x', y'
@@ -48,63 +50,65 @@ let draw_samples x y n =
   third is the corresponding unravelled row vector of the label. *)
 let load_mnist_train_data () =
   let p = local_data_path () in
-  Owl_dense_matrix.S.load (p ^ "mnist-train-images"),
-  Owl_dense_matrix.S.load (p ^ "mnist-train-labels"),
-  Owl_dense_matrix.S.load (p ^ "mnist-train-lblvec")
+  Owl_io.marshal_from_file (p ^ "mnist-train-images"),
+  Owl_io.marshal_from_file (p ^ "mnist-train-labels"),
+  Owl_io.marshal_from_file (p ^ "mnist-train-lblvec")
 
 let load_mnist_test_data () =
   let p = local_data_path () in
-  Owl_dense_matrix.S.load (p ^ "mnist-test-images"),
-  Owl_dense_matrix.S.load (p ^ "mnist-test-labels"),
-  Owl_dense_matrix.S.load (p ^ "mnist-test-lblvec")
+  Owl_io.marshal_from_file (p ^ "mnist-test-images"),
+  Owl_io.marshal_from_file (p ^ "mnist-test-labels"),
+  Owl_io.marshal_from_file (p ^ "mnist-test-lblvec")
 
-let print_mnist_image x =
-  Owl_dense_matrix_generic.reshape x [|28; 28|]
-  |> Owl_dense_matrix_generic.iter_rows (fun v ->
-    Owl_dense_matrix_generic.iter (function 0. -> Printf.printf " " | _ -> Printf.printf "■") v;
-    print_endline "";
-  )
+(* let print_mnist_image x =
+ *   Owl_dense_matrix_generic.reshape x [|28; 28|]
+ *   |> Owl_dense_matrix_generic.iter_rows (fun v ->
+ *     Owl_dense_matrix_generic.iter (function 0. -> Printf.printf " " | _ -> Printf.printf "■") v;
+ *     print_endline "";
+ *   ) *)
 
 (* similar to load_mnist_train_data but returns [x] as [*,28,28,1] ndarray *)
-let load_mnist_train_data_arr () =
-  let x, label, y = load_mnist_train_data () in
-  let m = Owl_dense_matrix.S.row_num x in
-  let x = Owl_dense_ndarray.S.reshape x [|m;28;28;1|] in
-  x, label, y
-
-let load_mnist_test_data_arr () =
-  let x, label, y = load_mnist_test_data () in
-  let m = Owl_dense_matrix.S.row_num x in
-  let x = Owl_dense_ndarray.S.reshape x [|m;28;28;1|] in
-  x, label, y
+(* let load_mnist_train_data_arr () =
+ *   let x, label, y = load_mnist_train_data () in
+ *   let m = Owl_dense_matrix.S.row_num x in
+ *   let x = Owl_dense_ndarray.S.reshape x [|m;28;28;1|] in
+ *   x, label, y
+ *
+ * let load_mnist_test_data_arr () =
+ *   let x, label, y = load_mnist_test_data () in
+ *   let m = Owl_dense_matrix.S.row_num x in
+ *   let x = Owl_dense_ndarray.S.reshape x [|m;28;28;1|] in
+ *   x, label, y *)
 
 (* load cifar train data, there are five batches in total. The loaded data is a
   10000 * 3072 matrix. Each row represents a 32 x 32 image of three colour
   channels, unravelled into a row vector. The labels are also returned. *)
 let load_cifar_train_data batch =
   let p = local_data_path () in
-  Owl_dense_ndarray.S.load (p ^ "cifar10_train" ^ (string_of_int batch) ^ "_data"),
-  Owl_dense_matrix.S.load (p ^ "cifar10_train" ^ (string_of_int batch) ^ "_labels"),
-  Owl_dense_matrix.S.load (p ^ "cifar10_train" ^ (string_of_int batch) ^ "_lblvec")
+  Owl_io.marshal_from_file (p ^ "cifar10_train" ^ (string_of_int batch) ^ "_data"),
+  Owl_io.marshal_from_file (p ^ "cifar10_train" ^ (string_of_int batch) ^ "_labels"),
+  Owl_io.marshal_from_file (p ^ "cifar10_train" ^ (string_of_int batch) ^ "_lblvec")
 
 let load_cifar_test_data () =
   let p = local_data_path () in
-  Owl_dense_ndarray.S.load (p ^ "cifar10_test_data"),
-  Owl_dense_matrix.S.load (p ^ "cifar10_test_labels"),
-  Owl_dense_matrix.S.load (p ^ "cifar10_test_lblvec")
+  Owl_io.marshal_from_file (p ^ "cifar10_test_data"),
+  Owl_io.marshal_from_file (p ^ "cifar10_test_labels"),
+  Owl_io.marshal_from_file (p ^ "cifar10_test_lblvec")
 
 let draw_samples_cifar x y n =
-  let col_num = (Owl_dense_ndarray_generic.shape x).(0) in
-  let a = Array.init col_num (fun i -> i) in
-  let a = Owl_stats.choose a n |> Array.to_list in
-  Owl_dense_ndarray.S.get_fancy [L a; R []; R []; R []] x,
-  Owl_dense_matrix.S.get_fancy  [L a; R []] y
+  (* FIXME: add missing randomising
+     let shape x = Bigarray.Genarray.dims x in
+     let col_num = (shape x).(0) in
+     let a = Array.init col_num (fun i -> i) in
+     let a = Owl_base_stats.choose a n |> Array.to_list in *)
+  Owl_base_dense_ndarray_generic.get_slice [[0;n-1]; []; []; []] x,
+  Owl_base_dense_ndarray_generic.get_slice [[0;n-1]; []] y
 
 (* load text data and stopwords *)
-let load_stopwords () =
-  let p = local_data_path () in
-  Owl_nlp_utils.load_stopwords (p ^ "stopwords.txt")
-
-let load_nips_train_data stopwords =
-  let p = local_data_path () in
-  Owl_nlp_utils.load_from_file ~stopwords (p ^ "nips.train")
+(* let load_stopwords () =
+ *   let p = local_data_path () in
+ *   Owl_nlp_utils.load_stopwords (p ^ "stopwords.txt")
+ *
+ * let load_nips_train_data stopwords =
+ *   let p = local_data_path () in
+ *   Owl_nlp_utils.load_from_file ~stopwords (p ^ "nips.train") *)
