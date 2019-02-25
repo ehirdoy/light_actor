@@ -178,12 +178,10 @@ module Impl = struct
     | None       -> false *)
 
   (* stop function #2 *)
-  (* let stop () =
+  let stop () =
     Actor_log.info "start_t = %i" !start_t;
     start_t := !start_t + 1;
-    !start_t > 7 *)
-
-  let stop () = false
+    !start_t > 2
 
 end
 
