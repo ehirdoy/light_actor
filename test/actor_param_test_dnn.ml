@@ -20,9 +20,6 @@ type task = {
 let make_network input_shape =
   input input_shape
   |> normalisation ~decay:0.9
-  |> conv2d [|5;5;1;32|] [|1;1|] ~act_typ:Activation.Relu
-  |> max_pool2d [|2;2|] [|2;2|]
-  |> dropout 0.1
   |> fully_connected 1024 ~act_typ:Activation.Relu
   |> linear 10 ~act_typ:Activation.(Softmax 1)
   |> get_network
@@ -115,7 +112,14 @@ module Impl = struct
       (k, v)
     ) kv_pairs
 
-  let stop () = false
+  let stop () =
+    let v = (get [|"a"|]).(0) in
+    match v.state with
+    | Some state ->
+      let len = Array.length state.loss in
+      let loss = state.loss.(len - 1) |> unpack_flt in
+      if (loss < 2.0) then true else false
+    | None -> false
 
 end
 
