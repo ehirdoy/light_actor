@@ -51,27 +51,18 @@ type task = {
 }
 
 let make_network () =
-  let nn =
-    input [|32;32;3|]
-    |> normalisation ~decay:0.9
-    |> conv2d [|3;3;3;32|] [|1;1|] ~act_typ:Activation.Relu
-    |> conv2d [|3;3;32;32|] [|1;1|] ~act_typ:Activation.Relu ~padding:VALID
-    |> max_pool2d [|2;2|] [|2;2|] ~padding:VALID
-    |> dropout 0.1
-    |> conv2d [|3;3;32;64|] [|1;1|] ~act_typ:Activation.Relu
-    |> conv2d [|3;3;64;64|] [|1;1|] ~act_typ:Activation.Relu ~padding:VALID
-    |> max_pool2d [|2;2|] [|2;2|] ~padding:VALID
-    |> dropout 0.1
-    |> fully_connected 512 ~act_typ:Activation.Relu
-    |> linear 10 ~act_typ:Activation.(Softmax 1)
-    |> get_network
-  in
-  nn
+  input [|28;28;1|]
+  |> lambda (fun x -> Maths.(x / F 256.))
+  |> conv2d [|5;5;1;32|] [|1;1|] ~act_typ:Activation.Relu
+  |> max_pool2d [|2;2|] [|2;2|]
+  |> dropout 0.1
+  |> fully_connected 1024 ~act_typ:Activation.Relu
+  |> linear 10 ~act_typ:Activation.(Softmax 1)
+  |> get_network
 
 let chkpt _state = ()
 let params = Params.config
-  ~batch:(Batch.Sample 100) ~learning_rate:(Learning_Rate.Adagrad 0.005)
-  ~checkpoint:(Checkpoint.Custom chkpt) ~stopping:(Stopping.Const 1e-6) 3.
+    ~batch:(Batch.Mini 100) ~learning_rate:(Learning_Rate.Adagrad 0.005) 0.1
 
 (* Utilities *)
 
@@ -87,7 +78,7 @@ let delta_nn nn0 nn1 =
   G.update nn0 delta
 
 let get_next_batch () =
-  let x, _, y = Dataset.load_cifar_train_data 1 in
+  let x, _, y = Dataset.load_mnist_train_data () in
   Dataset.draw_samples_cifar x y 500
 
 
