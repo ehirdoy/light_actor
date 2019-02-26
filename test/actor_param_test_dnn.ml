@@ -19,7 +19,7 @@ type task = {
 
 let make_network input_shape =
   input input_shape
-  |> lambda (fun x -> Maths.(x / F 256.))
+  |> normalisation ~decay:0.9
   |> conv2d [|5;5;1;32|] [|1;1|] ~act_typ:Activation.Relu
   |> max_pool2d [|2;2|] [|2;2|]
   |> dropout 0.1
