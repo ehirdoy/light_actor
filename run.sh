@@ -5,6 +5,7 @@ elif [ -z "$UUID" ]; then
     exit 123
 fi
 
+APP="/code/_build/default/test/actor_param_test_dnn.exe"
 #APP="/code/test/mirage/lwae"
 [ -z "$APP" ] && \
     APP="/code/_build/default/test/actor_param_test_0.exe"
