@@ -1,11 +1,9 @@
-module Impl = Actor_param_mirage_test_dnn.Impl
-
-include Actor_param_types.Make(Impl)
+include Actor_param_types.Make(Test.Impl)
 
 module Main (S: Mirage_stack_lwt.V4) = struct
 
   module N = Actor_net_mirage.Make (S)
-  module M = Actor_param.Make (N) (Actor_sys_mirage) (Impl)
+  module M = Actor_param.Make (N) (Actor_sys_mirage) (Test.Impl)
 
   let start (s : S.t)  =
     N.stored_stack_handler := Some s;
