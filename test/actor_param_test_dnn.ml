@@ -45,8 +45,7 @@ let delta_nn nn0 nn1 =
 
 let get_next_batch () =
   let x, _, y = Dataset.load_mnist_train_data_arr () in
-  (* let x, y = Dataset.draw_samples_cifar x y 500 in *)
-  x, y
+  Dataset.draw_samples_cifar x y 500
 
 
 (* for debugging only .. *)
