@@ -25,16 +25,44 @@ module Make (S : Mirage_stack_lwt.V4) = struct
   let exit () =
     Lwt.return_unit
 
+  type data_buff_t = { total: int; buffs: bytes list }
+  type sockaddr_t = { ip: Ipaddr.V4.t; port: int }
+  let data_pool : ((sockaddr_t, data_buff_t) Hashtbl.t) = Hashtbl.create 128
+
+  let data_pool_is_filled saddr =
+    let data_buff = Hashtbl.find data_pool saddr in
+    let sum = List.fold_left (fun a el -> a + Bytes.length el) 0 data_buff.buffs in
+    Logs.info (fun f -> f "sum=%d total=%d" sum data_buff.total);
+    sum >= data_buff.total
+
+  let data_pool_buffs saddr =
+    let data_buff = Hashtbl.find data_pool saddr in
+    let bytes = Bytes.concat Bytes.empty (List.rev data_buff.buffs) in
+    Hashtbl.remove data_pool saddr;
+    bytes
+
+  let data_pool_process saddr cbuf callback =
+    let bytes = Cstruct.to_bytes cbuf in
+    let data_buff =
+      if Hashtbl.mem data_pool saddr then
+        let orig = Hashtbl.find data_pool saddr in
+        { total=orig.total; buffs= bytes :: orig.buffs; }
+      else
+        { total=Marshal.total_size bytes 0; buffs=[]; }
+    in
+    Hashtbl.replace data_pool saddr data_buff;
+    if data_pool_is_filled saddr then
+      callback (Bytes.to_string (data_pool_buffs saddr))
+    else
+      Lwt.return_unit
+
   let listen addr callback =
     let port = String.split_on_char ':' addr
                |> List.rev |> List.hd |> int_of_string in
     let cb _udp port ~src ~dst ~src_port buf =
-      let bytes = Cstruct.to_bytes buf in
-      let total_size = Marshal.total_size bytes 0 in
-      Logs.info (fun f -> f "%a:%d -> %a:%d %d/%d Bytes"
-                    Ipaddr.V4.pp src src_port Ipaddr.V4.pp dst port
-                    (Bytes.length bytes) total_size);
-      callback (Cstruct.to_string buf)
+      Logs.info (fun f -> f "%a:%d -> %a:%d"
+                    Ipaddr.V4.pp src src_port Ipaddr.V4.pp dst port);
+      data_pool_process {ip=src; port=port;} buf callback
     in
     let s = match !stored_stack_handler with
       | None -> failwith "Uninitialized s"
