@@ -29,8 +29,11 @@ module Make (S : Mirage_stack_lwt.V4) = struct
     let port = String.split_on_char ':' addr
                |> List.rev |> List.hd |> int_of_string in
     let cb _udp port ~src ~dst ~src_port buf =
-      Logs.debug (fun f -> f "%a:%d -> %a:%d"
-                     Ipaddr.V4.pp src src_port Ipaddr.V4.pp dst port);
+      let bytes = Cstruct.to_bytes buf in
+      let total_size = Marshal.total_size bytes 0 in
+      Logs.info (fun f -> f "%a:%d -> %a:%d %d/%d Bytes"
+                    Ipaddr.V4.pp src src_port Ipaddr.V4.pp dst port
+                    (Bytes.length bytes) total_size);
       callback (Cstruct.to_string buf)
     in
     let s = match !stored_stack_handler with

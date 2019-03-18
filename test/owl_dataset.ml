@@ -5,8 +5,6 @@
 
 (** Dataset: easy access to various datasets *)
 
-open Owl_types
-
 let remote_data_path () = "https://github.com/ryanrhymes/owl_dataset/raw/master/"
 
 let local_data_path () =
