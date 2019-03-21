@@ -1,3 +1,5 @@
+open Lwt.Infix
+
 include Actor_param_types.Make(Test.Impl)
 
 module Main (S: Mirage_stack_lwt.V4) (KV: Mirage_kv_lwt.RO) = struct
@@ -5,7 +7,21 @@ module Main (S: Mirage_stack_lwt.V4) (KV: Mirage_kv_lwt.RO) = struct
   module N = Actor_net_mirage.Make (S)
   module M = Actor_param.Make (N) (Actor_sys_mirage) (Test.Impl)
 
-  let start (s : S.t) _kv =
+  let test kv =
+    let our_secret = "foo\n" in
+    KV.get kv (Mirage_kv.Key.v "secret") >|= function
+    | Error e ->
+      Logs.warn (fun f -> f "Could not compare the secret against a known constant: %a"
+        KV.pp_error e)
+    | Ok stored_secret ->
+      match String.compare our_secret stored_secret with
+      | 0 ->
+        Logs.info (fun f -> f "Contents of extremely secret vital storage confirmed!")
+      | _ ->
+        Logs.warn (fun f -> f "The secret provided does not match!")
+
+
+  let start (s : S.t) kv =
     N.stored_stack_handler := Some s;
 
     let server_uuid = "server" in
@@ -42,6 +58,7 @@ module Main (S: Mirage_stack_lwt.V4) (KV: Mirage_kv_lwt.RO) = struct
     }
     in
 
+    test kv >>= fun () ->
     M.init context
 
 end
