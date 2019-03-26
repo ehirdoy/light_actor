@@ -48,27 +48,56 @@ module Impl (KV: Mirage_kv_lwt.RO) = struct
     | None -> assert false
     | Some kv -> kv
 
-  let marshal_from fname =
-    KV.get (get_kv ()) (Mirage_kv.Key.v fname) >|= function
-    | Error _e -> assert false
-    | Ok data -> Marshal.from_string data 0
+  module Batch = struct
 
-  let refx = ref (Owl_base_dense_ndarray_s.empty [|60000; 784|])
-  let refy = ref (Owl_base_dense_ndarray_s.empty [|60000; 784|])
+    let nth = ref 0
+    let img = ref (Owl_base_dense_ndarray.S.zeros [|500;28;28;1|])
+    let lvl = ref (Owl_base_dense_ndarray.S.zeros [|500;10|])
 
-  let init () =
-    Lwt.join [
-      marshal_from "mnist-train-images" >>= fun x ->
-      let m = Owl_base_dense_ndarray_generic.row_num x in
-      refx := Owl_base_dense_ndarray_generic.reshape x [|m;28;28;1|];
-      marshal_from "mnist-train-lblvec" >>= fun y ->
-      refy := y; Lwt.return_unit
-    ] >|= fun () ->
-    Actor_log.info "Loaded mnist files"
+    let load_image_file nth =
+      let fname = Printf.sprintf "train-images-idx3-ubyte-%03d.bmp" nth in
+      KV.get (get_kv ()) (Mirage_kv.Key.v fname) >>= function
+      | Error _e -> assert false
+      | Ok data ->
+        let nr, len = 500, 28 in
+        let buf = Bytes.of_string data in
+        let acc = ref [] in
+        Bytes.iter (fun ch ->
+            acc := (int_of_char ch |> float_of_int) :: !acc)
+          buf;
+        let ar = Array.of_list (List.rev !acc) in
+        img := Owl_base_dense_ndarray.S.of_array ar [|nr;len;len;1|];
+        Lwt.return_unit
 
+    let load_label_file nth =
+      let fname = Printf.sprintf "train-labels-idx1-ubyte-%03d.lvl" nth in
+      KV.get (get_kv ()) (Mirage_kv.Key.v fname) >>= function
+      | Error _e -> assert false
+      | Ok data ->
+        let nr, range = 500, 10 in
+        let buf = Bytes.of_string data in
+        (* take single digit && accumulate a bitmap of it in a list *)
+        let acc = ref [] in
+        Bytes.iter (fun ch ->
+            let a = Array.init range (fun idx ->
+                if idx = (int_of_char ch) then 1. else 0.) in
+            acc := a :: !acc)
+          buf;
+        let x = Array.concat (List.rev !acc) in
+        lvl := Owl_base_dense_ndarray.S.of_array x [|nr;range|];
+        Lwt.return_unit
+  end
 
   let get_next_batch () =
-    !refx, !refy (* FIXME: iteration of partial *)
+    let nr = !Batch.nth in
+    Batch.nth := -1;
+    Lwt.async (fun () ->
+        Batch.load_image_file nr >>= fun () ->
+        Batch.load_label_file nr >>= fun () ->
+        Batch.nth := nr + 1; Lwt.return_unit);
+    while !Batch.nth > 0 do Lwt.pause () |> ignore done;
+    !Batch.img, !Batch.lvl
+
 
   type key = string
 

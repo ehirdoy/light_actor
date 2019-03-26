@@ -47,10 +47,6 @@ module Main (S: Mirage_stack_lwt.V4) (KV: Mirage_kv_lwt.RO) = struct
     }
     in
 
-    if my_uuid = server_uuid then
-      M.init context
-    else
-      Imp.init () >>= fun () ->
-      M.init context
+    M.init context
 
 end
