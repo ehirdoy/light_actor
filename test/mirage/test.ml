@@ -53,7 +53,7 @@ module Impl (KV: Mirage_kv_lwt.RO) = struct
     | Error _e -> assert false
     | Ok data -> Marshal.from_string data 0
 
-  let nsamples = 60_000	(* number of data *)
+  let nsamples = 500	(* number of data *)
   let edge = 28		(* image: square 28 * 28 *)
   let nclass = 10	(* digit: 0-9 *)
 
@@ -64,8 +64,10 @@ module Impl (KV: Mirage_kv_lwt.RO) = struct
     Lwt.join [
       marshal_from "mnist-train-images" >>= fun x ->
       let m = Owl_base_dense_ndarray_generic.row_num x in
-      refx := Owl_base_dense_ndarray_generic.reshape x [|m; edge; edge; 1|];
+      let x = Owl_base_dense_ndarray_generic.reshape x [|m; edge; edge; 1|] in
+      refx := Owl_base_dense_ndarray.S.get_slice [[0;nsamples-1]; []; []; []] x;
       marshal_from "mnist-train-lblvec" >>= fun y ->
+      let y = Owl_base_dense_ndarray.S.get_slice [[0;nsamples-1]; []] y in
       refy := y; Lwt.return_unit
     ] >|= fun () ->
     Actor_log.info "Loaded mnist files"
