@@ -7,16 +7,18 @@ module type Sig = sig
 
   type socket
 
-  val init : unit -> unit Lwt.t
+  type +'a io
 
-  val exit : unit -> unit Lwt.t
+  val init : unit -> unit io
 
-  val listen : string -> (string -> unit Lwt.t) -> unit Lwt.t
+  val exit : unit -> unit io
 
-  val send : string -> string -> unit Lwt.t
+  val listen : string -> (string -> unit io) -> unit io
 
-  val recv : socket -> string Lwt.t
+  val send : string -> string -> unit io
 
-  val close : socket -> unit Lwt.t
+  val recv : socket -> string io
+
+  val close : socket -> unit io
 
 end

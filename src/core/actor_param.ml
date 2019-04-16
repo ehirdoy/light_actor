@@ -4,7 +4,7 @@
  *)
 
 module Make
-  (Net  : Actor_net.Sig)
+  (Net  : Actor_net.Sig with type 'a io = 'a Lwt.t)
   (Sys  : Actor_sys.Sig)
   (Impl : Actor_param_impl.Sig)
   = struct
