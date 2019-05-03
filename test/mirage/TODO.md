@@ -1,12 +1,23 @@
-# ToDo
+# ToDo list
 
-- build Owl without Unix dependency for MirageOS
-- add Travis-CI for D-MNIST with Unix && MirageOS
-- add Random'ization of get_next
- - fix Lwt'ization of get_next
-- add inference/test
-- fix Transparent parallelism behind LwAE from consisten training interface as AE does
-- add Memory usage instrument by Gc module
-- add support arbitral number of clients automatically ~100
-- add other Barrier support, Jianxin?
+Possibly to be done in Q2 ;)
 
+## Bugfix, asap
+- owl: build Owl without Unix dependency for MirageOS https://github.com/owlbarn/owl/pull/372
+- mnist: add Random'ization of get_next, currently it's incremented sequentially, but should be random'ized.
+  - optional Lwt'ized impl???
+
+## New features to implement
+- github: add Travis-CI for D-MNIST with Unix && MirageOS, make sure to not break with further commits
+- mnist: add inference/test after training
+- lwae: fix transparent parallelism behind LwAE from consistent training interface as the original AE does
+- lwae: add other Barrier support, Jianxin?
+  - for the barrier support, I've added some initial implementation here: https://github.com/jzstark/light_actor/blob/lda/src/core/actor_barrier_ssp.ml
+- report: add memory usage instrument by Gc module
+  - memory/execution time profiling tools: just interested to briefly discuss what kind of tools being used for profiling. Current I'm using valgrind but not very handy.
+- report: add support arbitral number of clients automatically ~100+
+  - evaluation setup: use multiple rpi devices, or one large server, to scale up.
+
+## Unsorted, yet
+- besides mnist training, find several IoT-based use cases where multiple instances interact with each other
+- difficulties in wrapping up an Owl script into Unikernel; possible automation of this process and deployment to edge devices
